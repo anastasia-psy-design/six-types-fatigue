@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Какая у вас усталость - диагностика</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F5EEE5;--card:#FBF7F1;--deep:#ECE3D5;
+    --rose:#BE726C;--rose-deep:#A85A55;--rose-soft:#F1DAD3;
+    --taupe:#C2A98F;--sage:#A8A98C;
+    --ink:#3E3733;--muted:#8A7F74;--line:#E6DCCD;
+    --disp:"Playfair Display",Georgia,serif;--sans:"Manrope",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{background:var(--cream);color:var(--ink);font-family:var(--sans);line-height:1.55;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px 40px}
+  .wrap{width:100%;max-width:460px}
+  .screen{display:none;animation:fade .4s ease both}
+  .screen.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  svg{display:block}
+
+  /* stepper */
+  .stepper{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:22px}
+  .step{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+  .step .num{width:22px;height:22px;border-radius:50%;background:var(--deep);color:var(--muted);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:.3s}
+  .step .lbl{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.01em}
+  .step.on .num{background:var(--rose);color:#fff}
+  .step.on .lbl{color:var(--ink)}
+  .step.done .num{background:var(--taupe);color:#fff}
+  .step-line{flex:1;height:1px;background:var(--line);margin:0 2px}
+  @media(max-width:420px){.step .lbl{display:none}.step.on .lbl{display:inline}}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;min-height:28px}
+  .topbar .ttl{font-size:15px;font-weight:600;color:var(--ink)}
+  .iconbtn{width:30px;height:30px;border:none;background:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;border-radius:8px}
+  .iconbtn:hover{background:var(--deep);color:var(--ink)}
+
+  /* START */
+  .brand{display:flex;align-items:center;gap:7px;font-size:16px;font-weight:600;color:var(--ink);margin-bottom:30px}
+  .brand svg{color:var(--rose)}
+  .hero{position:relative;background:linear-gradient(170deg,#F3E4DC,#EFE6D8);border-radius:24px;padding:30px 26px 26px;overflow:hidden;margin-bottom:18px}
+  .hero h1{font-family:var(--disp);font-weight:600;font-size:clamp(28px,7vw,34px);line-height:1.18;color:var(--ink);position:relative;z-index:2}
+  .hero p{font-size:15px;color:var(--muted);margin-top:14px;max-width:24em;position:relative;z-index:2}
+  .hero .botanical{position:absolute;right:-10px;bottom:-12px;width:160px;opacity:.5;color:var(--rose);z-index:1}
+  .btn{width:100%;font-family:var(--sans);font-weight:700;font-size:16px;cursor:pointer;border:none;border-radius:40px;padding:16px;background:var(--rose);color:#fff;box-shadow:0 8px 20px rgba(168,90,85,.25);transition:.18s}
+  .btn:hover{background:var(--rose-deep);transform:translateY(-1px)}
+  .btn:disabled{background:var(--deep);color:var(--muted);box-shadow:none;cursor:default;transform:none}
+  .conf{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;color:var(--muted);margin-top:16px}
+  .badges{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .badge{display:flex;gap:10px;align-items:flex-start}
+  .badge .bi{color:var(--rose);flex:none;margin-top:1px}
+  .badge b{font-size:12.5px;font-weight:700;display:block;color:var(--ink)}
+  .badge span{font-size:11.5px;color:var(--muted);line-height:1.4}
+
+  /* QUIZ */
+  .progress{height:6px;background:var(--deep);border-radius:6px;overflow:hidden;margin-bottom:8px}
+  .progress i{display:block;height:100%;background:var(--rose);border-radius:6px;transition:width .4s;width:0}
+  .pmeta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:22px}
+  .qhead{font-family:var(--disp);font-weight:600;font-size:24px;line-height:1.2;margin-bottom:6px}
+  .qsub{font-size:13.5px;color:var(--muted);margin-bottom:18px}
+  .qrow{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px;margin-bottom:12px}
+  .qtop{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+  .qtop .qi{width:34px;height:34px;border-radius:10px;background:var(--deep);color:var(--rose);display:flex;align-items:center;justify-content:center;flex:none}
+  .qtop .qt{font-size:15px;font-weight:600;line-height:1.3}
+  .scale{display:flex;gap:7px}
+  .scale button{flex:1;aspect-ratio:1;max-width:46px;border:1.5px solid var(--line);background:#fff;border-radius:50%;font-family:var(--sans);font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;transition:.14s}
+  .scale button:hover{border-color:var(--rose)}
+  .scale button.on{background:var(--rose);border-color:var(--rose);color:#fff}
+  .ends{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:7px}
+
+  /* RESULT */
+  .emblem{position:relative;width:180px;height:150px;margin:6px auto 4px}
+  .emblem .laurel{position:absolute;inset:0;color:var(--taupe);opacity:.6}
+  .emblem .disc{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:104px;height:104px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#D08A84,var(--rose) 60%,var(--rose-deep));display:flex;align-items:center;justify-content:center;box-shadow:0 10px 26px rgba(168,90,85,.3)}
+  .emblem .disc svg{color:#fff;width:42px;height:42px}
+  .rtype{font-family:var(--disp);font-weight:600;font-size:30px;color:var(--rose);text-align:center;line-height:1.12;margin:6px 0 4px}
+  .rsev{text-align:center;font-size:13.5px;color:var(--muted);margin:0 0 20px}
+  .rlabel{text-align:center;font-family:var(--disp);font-weight:600;font-size:22px;color:var(--ink);margin-bottom:4px}
+  .bars{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 18px;margin-bottom:20px}
+  .bar{margin-bottom:15px}.bar:last-child{margin-bottom:0}
+  .bar-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .bar-nm{font-size:14px;font-weight:600}.bar-pc{font-size:13px;font-weight:700;color:var(--muted)}
+  .bar.lead .bar-nm{color:var(--rose-deep)}.bar.lead .bar-pc{color:var(--rose-deep)}
+  .bar-tr{height:8px;background:var(--deep);border-radius:6px;overflow:hidden}
+  .bar-fl{height:100%;border-radius:6px;width:0;transition:width .9s cubic-bezier(.2,.7,.3,1)}
+  .bar{position:relative;cursor:pointer}
+  .bar-nm{display:inline-flex;align-items:center;gap:6px}
+  .binfo{width:15px;height:15px;border-radius:50%;border:1px solid var(--muted);color:var(--muted);font-size:9px;font-style:normal;font-weight:700;display:inline-flex;align-items:center;justify-content:center;line-height:1;transition:.2s}
+  .bar-def{display:none;font-size:12.5px;color:var(--muted);line-height:1.45;background:var(--deep);border-radius:9px;padding:10px 12px;margin-top:9px}
+  .bar:hover .bar-def,.bar.open .bar-def{display:block}
+  .bar:hover .binfo,.bar.open .binfo{border-color:var(--rose);color:var(--rose)}
+  .quote{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:22px}
+  .quote .qm{color:var(--rose);flex:none;font-family:var(--disp);font-size:34px;line-height:.8;margin-top:4px}
+  .quote p{font-size:15px;line-height:1.55;color:var(--ink)}
+  .btn-line{width:100%;font-family:var(--sans);font-weight:700;font-size:15px;cursor:pointer;background:none;border:1.5px solid var(--rose);color:var(--rose-deep);border-radius:40px;padding:15px;display:flex;align-items:center;justify-content:center;gap:8px;transition:.18s}
+  .btn-line:hover{background:var(--rose);color:#fff}
+
+  /* RECS */
+  .rhead{font-family:var(--disp);font-weight:600;font-size:26px;line-height:1.2;margin-bottom:14px}
+  .safetyline{font-size:13px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-left:3px solid var(--rose);border-radius:10px;padding:11px 14px;margin-bottom:18px;line-height:1.5}
+  .rec{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;display:flex;gap:14px}
+  .rec .ri{width:38px;height:38px;border-radius:11px;background:var(--rose-soft);color:var(--rose-deep);display:flex;align-items:center;justify-content:center;flex:none}
+  .rec h4{font-size:15px;font-weight:700;margin-bottom:9px}
+  .rec ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+  .rec li{font-size:13.5px;color:var(--ink);line-height:1.4;padding-left:16px;position:relative}
+  .rec li::before{content:"";position:absolute;left:2px;top:8px;width:5px;height:5px;border-radius:50%;background:var(--rose)}
+  .cta{background:linear-gradient(160deg,#F2DAD4,#EFD0C9);border-radius:18px;padding:22px;margin-top:6px;position:relative;overflow:hidden}
+  .cta h4{font-family:var(--disp);font-weight:600;font-size:20px;line-height:1.22;color:var(--ink);position:relative;z-index:2;max-width:15em}
+  .cta p{font-size:13px;color:#6E5C52;margin:10px 0 16px;position:relative;z-index:2;line-height:1.5}
+  .cta a{display:inline-block;font-weight:700;font-size:14.5px;background:var(--rose);color:#fff;text-decoration:none;border-radius:30px;padding:13px 22px;position:relative;z-index:2;transition:.18s}
+  .cta a:hover{background:var(--rose-deep)}
+  .cta .leaf{position:absolute;right:-6px;bottom:-8px;width:120px;color:var(--rose);opacity:.35;z-index:1}
+  .restart{display:block;margin:20px auto 0;font-size:13.5px;color:var(--muted);background:none;border:none;cursor:pointer;width:100%}
+  .restart:hover{color:var(--ink)}
+  .toast{text-align:center;font-size:12.5px;color:var(--rose-deep);font-weight:600;height:16px;margin-top:8px}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- STEPPER -->
+  <div class="stepper" id="stepper">
+    <div class="step on" data-s="1"><span class="num">1</span><span class="lbl">Старт</span></div>
+    <span class="step-line"></span>
+    <div class="step" data-s="2"><span class="num">2</span><span class="lbl">Диагностика</span></div>
+    <span class="step-line"></span>
+    <div class="step" data-s="3"><span class="num">3</span><span class="lbl">Результат</span></div>
+    <span class="step-line"></span>
+    <div class="step" data-s="4"><span class="num">4</span><span class="lbl">Советы</span></div>
+  </div>
+
+  <!-- START -->
+  <section class="screen active" id="start">
+    <div class="hero">
+      <svg class="botanical" viewBox="0 0 120 150" fill="none"><path d="M60 145.5 C50.4 108 69.6 75 60 33 S54 9 60 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><g transform="translate(60 126) rotate(-48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 126) rotate(48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 102.00000000000001) rotate(-48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 102.00000000000001) rotate(48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 78) rotate(-48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 78) rotate(48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 55.5) rotate(-48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 55.5) rotate(48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 36) rotate(-48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 36) rotate(48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 27)"><path d="M0 0 C-7 -8.1 -7 -15.299999999999999 0 -18 C7 -15.299999999999999 7 -8.1 0 0 Z" fill="currentColor"/></g></svg>
+      <h1>Поймем, какая усталость у вас сейчас ведущая</h1>
+      <p>Небольшая диагностика поможет понять, что истощает сильнее всего, и подобрать бережные рекомендации</p>
+    </div>
+    <button class="btn" onclick="start()">Начать</button>
+    <div class="conf"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Конфиденциально и бережно</div>
+    <div class="badges">
+      <div class="badge"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/></svg></span><div><b>Инструмент самонаблюдения</b><span>Возможность скорректировать состояние</span></div></div>
+      <div class="badge"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><div><b>Конфиденциально</b><span>Ответы остаются только с вами</span></div></div>
+      <div class="badge"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 20s-6.5-4.2-8.4-8.1C2.2 9 3.5 6 6.4 6c1.9 0 3 1.2 3.6 2.1C10.7 7.2 11.7 6 13.6 6c2.9 0 4.2 3 3.8 5.9C19.5 15.8 12 20 12 20z"/></svg></span><div><b>Бережный подход</b><span>Без оценок и сравнений, только опора</span></div></div>
+      <div class="badge"><span class="bi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M11 20c0-6 3-11 9-13-1 7-4 11-9 13zM11 20c0-4-2-7-6-8 1 5 3 7 6 8z"/></svg></span><div><b>Поддержка на пути</b><span>Помощь в том, чтобы развернуться к себе</span></div></div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="screen" id="quiz">
+    <div class="topbar"><button class="iconbtn" onclick="quizBack()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><span class="ttl">Диагностика</span><span style="width:30px"></span></div>
+    <div class="progress"><i id="pbar"></i></div>
+    <div class="pmeta"><span id="pstep">Шаг 1 из 4</span><span id="ppct">0%</span></div>
+    <h2 class="qhead">Что вы чувствуете в последние дни?</h2>
+    <p class="qsub">Оцените каждое утверждение по шкале</p>
+    <div id="qlist"></div>
+    <button class="btn" id="qnext" onclick="quizNext()" disabled>Далее</button>
+  </section>
+
+  <!-- RESULT -->
+  <section class="screen" id="result">
+    <div class="topbar"><button class="iconbtn" onclick="go('quiz',2)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><span class="ttl">Результат</span><button class="iconbtn" onclick="share()"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M8 8l4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg></button></div>
+    <p class="rlabel">Ваш ведущий тип усталости</p>
+    <div class="emblem"><svg class="laurel" viewBox="0 0 180 150" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M64 120C44 116 30 104 26 84M30 96c-8-3-11-9-11-17 7 2 11 8 11 17zM28 80c-7-4-9-11-7-18 6 4 9 10 7 18zM33 65c-6-5-7-12-3-18 5 5 6 11 3 18zM116 120c20-4 34-16 38-36M150 96c8-3 11-9 11-17-7 2-11 8-11 17zM152 80c7-4 9-11 7-18-6 4-9 10-7 18zM147 65c6-5 7-12 3-18-5 5-6 11-3 18z"/></svg><div class="disc" id="emblemIcon"></div></div>
+    <h2 class="rtype" id="rtype"></h2>
+    <p class="rsev" id="rsev"></p>
+    <div class="bars" id="bars"></div>
+    <div class="quote"><span class="qm">"</span><p id="rquote"></p></div>
+    <button class="btn-line" onclick="go('recs',4);buildRecs()">Смотреть рекомендации <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <div class="toast" id="toast"></div>
+  </section>
+
+  <!-- RECS -->
+  <section class="screen" id="recs">
+    <div class="topbar"><button class="iconbtn" onclick="go('result',3)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><span class="ttl">Рекомендации</span><span style="width:30px"></span></div>
+    <h2 class="rhead">Что поможет восстановиться</h2>
+    <p class="safetyline">Расслабиться по команде не выходит - телу сначала нужно почувствовать, что сейчас безопасно. Поэтому начните с маленького и телесного шага</p>
+    <div id="reclist"></div>
+    <div class="cta">
+      <svg class="leaf" viewBox="0 0 120 150" fill="none"><path d="M60 145.5 C50.4 108 69.6 75 60 33 S54 9 60 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><g transform="translate(60 126) rotate(-48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 126) rotate(48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 102.00000000000001) rotate(-48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 102.00000000000001) rotate(48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 78) rotate(-48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 78) rotate(48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 55.5) rotate(-48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 55.5) rotate(48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 36) rotate(-48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 36) rotate(48)"><path d="M0 0 C-8 -9 -8 -17 0 -20 C8 -17 8 -9 0 0 Z" fill="currentColor"/></g><g transform="translate(60 27)"><path d="M0 0 C-7 -8.1 -7 -15.299999999999999 0 -18 C7 -15.299999999999999 7 -8.1 0 0 Z" fill="currentColor"/></g></svg>
+      <h4>Вам может подойти бережное сопровождение к восстановлению</h4>
+      <p>Я Анастасия Васильева, психолог и тренер по сеансам релаксации. Помогаю мягко восстанавливаться при усталости и выгорании</p>
+      <a href="https://t.me/vnutrenniy_mayak/560" target="_blank" rel="noopener">Послушать практику «Эмоциональная свобода»</a>
+    </div>
+    <button class="restart" onclick="restart()">Пройти заново</button>
+  </section>
+
+</div>
+
+<script>
+const ICON={
+  fiz:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.5" r="2.3"/><path d="M12 7.8V15M12 10.5l-3.5 2M12 10.5l3.5 2M12 15l-2.2 4.5M12 15l2.2 4.5"/></svg>',
+  emo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-6.5-4.2-8.4-8.1C2.2 9 3.5 6 6.4 6c1.9 0 3 1.2 3.6 2.1C10.7 7.2 11.7 6 13.6 6c2.9 0 4.2 3 3.8 5.9C19.5 15.8 12 20 12 20z"/></svg>',
+  ment:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5a2.6 2.6 0 0 0-.2 5.2 1.9 1.9 0 0 1 .2 3.8"/></svg>',
+  sens:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/></svg>',
+  soc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="2.3"/><circle cx="16" cy="9" r="1.9"/><path d="M4 19c0-2.8 2.2-5 5-5 1.7 0 3.2.8 4.1 2.1M14.6 13.4c1.9.4 3.4 2.1 3.4 4.3"/></svg>',
+  tvor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v3.2M12 17.3v3.2M3.5 12h3.2M17.3 12h3.2M6.3 6.3l2.2 2.2M15.5 15.5l2.2 2.2M17.7 6.3l-2.2 2.2M8.5 15.5l-2.2 2.2"/><circle cx="12" cy="12" r="2.1"/></svg>'
+};
+const TYPES={
+  fiz:{name:"Физическая",color:"#C9B79E"},
+  emo:{name:"Эмоциональная",color:"#BE726C"},
+  ment:{name:"Ментальная",color:"#9C7E84"},
+  sens:{name:"Сенсорная",color:"#B89A86"},
+  soc:{name:"Социальная",color:"#A8A98C"},
+  tvor:{name:"Творческая",color:"#C9A36A"}
+};
+const QUOTE={
+  fiz:"Похоже, тело давно в напряжении и не успевает восстановиться, даже сон не возвращает силы полностью. Сейчас ему важнее всего покой и мягкая телесная разгрузка",
+  emo:"Похоже, вы долго держались и оставались собранными, но сил на переработку чувств сейчас недостаточно. Вам важно не только отдохнуть, но и дать себе место, где можно побыть собой",
+  ment:"Похоже, ваш ум давно не получает передышки: слишком много решений, контроля и задач разом. Сейчас ему нужна выгрузка и паузы, а не новая порция усилий",
+  sens:"Похоже, ваши чувства перегружены потоком: экранами, светом, звуком, людьми. Вашей нервной системе просто нужно меньше входящего и больше тишины",
+  soc:"Похоже, общение в последнее время больше забирает, чем дает, и на себя сил почти не остается. Сейчас восстанавливает тишина наедине с собой и люди, рядом с которыми можно быть расслабленным и не играть роли",
+  tvor:"Похоже, жизнь почти целиком ушла в «надо», и на то, что радует просто так, не осталось места. Интерес возвращается оттуда же - через красивое и бесполезное"
+};
+const DEFS={
+  fiz:"Усталость тела: ресурс на исходе от недосыпа, спешки, напряжения, которое тело держит и днем, и ночью",
+  emo:"Усталость от чувств - своих и чужих: когда долго «держишь лицо», считываешь настроения других и носишь все это в себе",
+  ment:"Усталость ума: голова перегружена решениями, контролем и многозадачностью и не получает передышки",
+  sens:"Усталость от перегрузки чувств: экраны, свет, звук и поток информации, на которые нервной системе нечем ответить, кроме раздражения",
+  soc:"Усталость от общения: быть на связи и удобным для всех тратит ресурс, даже когда люди приятны",
+  tvor:"Усталость от «надо»: когда в жизни не остается места новому, красивому и сделанному просто для радости"
+};
+const RECS={
+  fiz:{today:["полежать без задач хотя бы 20 минут","почувствовать опору стоп и вес тела","сделать несколько выдохов длиннее вдоха"],week:["добавить телесную разгрузку: растяжку, ванну, массаж","позаботиться о сне и ложиться раньше","оставить один день без «надо»"]},
+  emo:{today:["сказать близкому «мне сейчас тяжело»","ладонь на грудь и несколько спокойных вдохов-выдохов","назвать 3 чувства, которые сейчас живут внутри"],week:["оставить один вечер без обязательств","заметить, где говорю «да» автоматически","место, где можно разгрузиться: личный дневник, терапия с психологом"]},
+  ment:{today:["выгрузить мысли на бумагу","короткая пауза без телефона","из головы в тело: дыхание и опора стоп"],week:["передать кому-то одно решение","блокнот у кровати для ночных мыслей","упростить список дел"]},
+  sens:{today:["10 минут тишины без экрана и звука","приглушить свет, снять наушники","намеренно замедлить движения глаз, не торопиться"],week:["вечер без экрана за час до сна","меньше фоновых стимулов днем","паузы между делами"]},
+  soc:{today:["побыть в тишине наедине с собой","меньше необязательного общения","побыть с тем, с кем можно молчать"],week:["заметить, какие контакты опустошают","позаботиться о времени только для себя","меньше быть удобным для всех"]},
+  tvor:{today:["15 минут на приятное без пользы","заметить что-то красивое просто так","сменить привычный маршрут"],week:["вернуть занятие для души","добавить новые впечатления","время на красивое без цели"]}
+};
+const PERSIST=["обратиться за поддержкой","пройти консультацию у специалиста","выстроить бережный план восстановления"];
+
+const Q=[
+  {t:"fiz", x:"Тело тяжелое, не хватает сил"},
+  {t:"emo", x:"Меня быстро переполняют эмоции"},
+  {t:"ment",x:"Сложно сосредоточиться, мысли разбегаются"},
+  {t:"sens",x:"Хочется тишины и меньше стимулов"},
+  {t:"soc", x:"Общение стало утомлять"},
+  {t:"tvor",x:"Все делаю из «надо», а не из «хочу»"},
+  {t:"fiz", x:"Сон не восстанавливает - просыпаюсь без сил"},
+  {t:"emo", x:"Весь день «держу лицо», а внутри тяжело"},
+  {t:"ment",x:"Голова не выключается даже в покое"},
+  {t:"sens",x:"Звук, свет и экран к вечеру раздражают"},
+  {t:"soc", x:"Хочется, чтобы от меня ненадолго ничего не хотели"},
+  {t:"tvor",x:"Давно ничего не радует просто так"}
+];
+const PER=3, PAGES=Math.ceil(Q.length/PER);
+const ENDS=["Почти нет","","","","Очень сильно"];
+let answers=new Array(Q.length).fill(null), page=0, leadKeys=[];
+const $=id=>document.getElementById(id);
+const reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+function setStep(n){document.querySelectorAll('.step').forEach(s=>{const v=+s.dataset.s;s.classList.toggle('on',v===n);s.classList.toggle('done',v<n);});}
+function go(id,step){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');setStep(step);window.scrollTo({top:0,behavior:'smooth'});}
+
+function start(){answers.fill(null);page=0;go('quiz',2);renderPage();}
+function renderPage(){
+  const list=$('qlist');list.innerHTML='';
+  const from=page*PER, items=Q.slice(from,from+PER);
+  items.forEach((q,j)=>{
+    const idx=from+j;
+    const row=document.createElement('div');row.className='qrow';
+    row.innerHTML=`<div class="qtop"><span class="qi">${ICON[q.t]}</span><span class="qt">${q.x}</span></div>
+      <div class="scale" data-idx="${idx}"></div>
+      <div class="ends"><span>Почти нет</span><span>Очень сильно</span></div>`;
+    const sc=row.querySelector('.scale');
+    for(let v=1;v<=5;v++){
+      const b=document.createElement('button');b.textContent=v;
+      if(answers[idx]===v)b.classList.add('on');
+      b.onclick=()=>{answers[idx]=v;sc.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');checkPage();};
+      sc.appendChild(b);
+    }
+    list.appendChild(row);
+  });
+  $('pstep').textContent=`Шаг ${page+1} из ${PAGES}`;
+  const done=answers.slice(0,from).filter(a=>a!==null).length;
+  $('pbar').style.width=(page/PAGES*100)+'%';
+  $('ppct').textContent=Math.round(page/PAGES*100)+'%';
+  $('qnext').textContent = page===PAGES-1 ? 'Показать результат' : 'Далее';
+  checkPage();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function checkPage(){
+  const from=page*PER;
+  const ok=Q.slice(from,from+PER).every((q,j)=>answers[from+j]!==null);
+  $('qnext').disabled=!ok;
+  if(ok){$('pbar').style.width=((page+1)/PAGES*100)+'%';$('ppct').textContent=Math.round((page+1)/PAGES*100)+'%';}
+}
+function quizNext(){if(page<PAGES-1){page++;renderPage();}else finish();}
+function quizBack(){if(page>0){page--;renderPage();}else go('start',1);}
+
+function finish(){
+  const sum={},cnt={};for(const k in TYPES){sum[k]=0;cnt[k]=0;}
+  Q.forEach((q,i)=>{if(answers[i]!==null){sum[q.t]+=answers[i];cnt[q.t]++;}});
+  const total=Object.values(sum).reduce((a,b)=>a+b,0);
+  const avg=total/Q.length; // 1..5, среднее по всем ответам
+
+  // доля каждого канала от общей суммы баллов, сумма всех pct всегда = 100
+  let arr=Object.keys(TYPES).map(k=>({k,sum:sum[k],raw:total?sum[k]/total*100:0}));
+  arr.forEach(a=>a.base=Math.floor(a.raw));
+  let assigned=arr.reduce((s,a)=>s+a.base,0);
+  let remainder=100-assigned;
+  const byRemainder=[...arr].sort((a,b)=>(b.raw-b.base)-(a.raw-a.base));
+  byRemainder.forEach((a,i)=>{a.pct=a.base+(i<remainder?1:0);});
+  arr.sort((a,b)=>b.pct-a.pct);
+
+  const maxRaw=arr[0].sum;
+  const low = avg<2; // общий уровень усталости низкий по сырым баллам
+  // "несколько лидеров" - только если ответы по этим каналам буквально совпали
+  let leaders = low ? [arr[0].k] : arr.filter(a=>a.sum===maxRaw).map(a=>a.k);
+  if(leaders.length>2)leaders=leaders.slice(0,2);
+  const hi = low ? [] : leaders;
+  leadKeys = low ? [arr[0].k] : leaders;
+
+  $('emblemIcon').innerHTML=ICON[leadKeys[0]];
+  $('rtype').textContent = low ? 'Есть ресурс'
+    : leaders.length>1 ? leaders.map(k=>TYPES[k].name).join(' и ')+' усталость'
+    : TYPES[leaders[0]].name+' усталость';
+  $('rsev').textContent = avg<2 ? 'В целом ресурс есть - выделяется один канал'
+    : avg<3.5 ? 'Усталость накопилась в нескольких местах одновременно'
+    : 'Сейчас почти все каналы работают на пределе';
+  $('rquote').textContent = low
+    ? "Сейчас выраженной усталости ни в одном канале нет - хороший момент, чтобы поддерживать ресурс и замечать первые сигналы заранее"
+    : leaders.length>1
+    ? "Сразу несколько видов выражены одинаково сильно - "+leaders.map(k=>TYPES[k].name.toLowerCase()).join(' и ')+". Так бывает, когда усталость накопилась с разных сторон. Начните с того, что ближе и доступнее прямо сейчас"
+    : QUOTE[leaders[0]];
+
+  const bars=$('bars');bars.innerHTML='';
+  arr.forEach(a=>{
+    const el=document.createElement('div');el.className='bar'+(hi.includes(a.k)?' lead':'');
+    el.innerHTML=`<div class="bar-top"><span class="bar-nm">${TYPES[a.k].name}<i class="binfo">i</i></span><span class="bar-pc">${a.pct}%</span></div>`+
+      `<div class="bar-tr"><div class="bar-fl" style="background:${TYPES[a.k].color}"></div></div>`+
+      `<div class="bar-def">${DEFS[a.k]}</div>`;
+    el.onclick=()=>el.classList.toggle('open');
+    bars.appendChild(el);
+    const fl=el.querySelector('.bar-fl');
+    if(reduce)fl.style.width=a.pct+'%';else requestAnimationFrame(()=>setTimeout(()=>fl.style.width=a.pct+'%',60));
+  });
+  go('result',3);
+}
+
+function buildRecs(){
+  const list=$('reclist');list.innerHTML='';
+  const SUN=ICON.tvor;
+  const CAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/></svg>';
+  const HRT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c-5-3-8-6.5-8-11a4 4 0 0 1 7-2.6A4 4 0 0 1 20 10c0 4.5-3 8-8 11z"/></svg>';
+  let blocks;
+  if(leadKeys.length>1){
+    blocks=leadKeys.map(k=>({ic:ICON[k],t:TYPES[k].name+' усталость',items:RECS[k].today}));
+    blocks.push({ic:HRT,t:'Если состояние держится долгое время, то важно',items:PERSIST});
+  }else{
+    const r=RECS[leadKeys[0]];
+    blocks=[{ic:SUN,t:'На сегодня',items:r.today},{ic:CAL,t:'На неделю',items:r.week},{ic:HRT,t:'Если состояние держится долгое время, то важно',items:PERSIST}];
+  }
+  blocks.forEach((b,i)=>{
+    const el=document.createElement('div');el.className='rec';
+    el.innerHTML=`<span class="ri">${b.ic}</span><div><h4>${i+1}. ${b.t}</h4><ul>${b.items.map(x=>`<li>${x}</li>`).join('')}</ul></div>`;
+    list.appendChild(el);
+  });
+}
+
+function share(){
+  const txt=`Моя ведущая усталость - ${TYPES[leadKeys[0]].name.toLowerCase()}. Тест: какая у вас усталость.`;
+  if(navigator.share){navigator.share({text:txt}).catch(()=>{});}
+  else navigator.clipboard.writeText(txt).then(()=>{$('toast').textContent='Скопировано';setTimeout(()=>$('toast').textContent='',2500);}).catch(()=>{});
+}
+function restart(){answers.fill(null);page=0;go('start',1);}
+</script>
+</body>
+</html>
